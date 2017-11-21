@@ -1,2 +1,4 @@
-# ldbc-snb-tools
-A set of tools for the LDBC Social Network Benchmark.
+LDBC SNB Tools
+==============
+
+Repository for various LDBC SNB tools.
