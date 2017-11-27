@@ -21,7 +21,7 @@ public class EdgeListReverseIndex {
 
     public void map(Object key, Text value, Context context
                     ) throws IOException, InterruptedException {
-      String[] tokens = value.toString().split("|");
+      String[] tokens = value.toString().split("\\|");
       context.write(new Text(tokens[1]), new Text(tokens[0]));
     }
   }
