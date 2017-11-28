@@ -46,6 +46,7 @@ public class EdgeListReverseIndex {
       System.err.println("Usage: edgelistreverseindex <in> [<in>...] <out>");
       System.exit(2);
     }
+    conf.set("mapreduce.output.textoutputformat.separator", "|");
     Job job = new Job(conf, "edge list reverse index");
     job.setJarByClass(EdgeListReverseIndex.class);
     job.setMapperClass(InVertexMapper.class);
