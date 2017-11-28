@@ -22,7 +22,11 @@ public class EdgeListReverseIndex {
     public void map(Object key, Text value, Context context
                     ) throws IOException, InterruptedException {
       String[] tokens = value.toString().split("\\|");
-      context.write(new Text(tokens[1]), new Text(tokens[0]));
+      String newValue = tokens[0];
+      for (int i = 2; i < tokens.length; i++) {
+        newValue = newValue + "|" + tokens[i];
+      }
+      context.write(new Text(tokens[1]), new Text(newValue));
     }
   }
 
