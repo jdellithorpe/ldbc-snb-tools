@@ -42,23 +42,58 @@ public class EdgeListReverseIndex {
   public static void main(String[] args) throws Exception {
     Configuration conf = new Configuration();
     String[] otherArgs = new GenericOptionsParser(conf, args).getRemainingArgs();
-    if (otherArgs.length < 2) {
-      System.err.println("Usage: edgelistreverseindex <in> [<in>...] <out>");
+    if (otherArgs.length != 2) {
+      System.err.println("Usage: edgelistreverseindex <social_network> <out>");
       System.exit(2);
     }
     conf.set("mapreduce.output.textoutputformat.separator", "|");
-    Job job = new Job(conf, "edge list reverse index");
-    job.setJarByClass(EdgeListReverseIndex.class);
-    job.setMapperClass(InVertexMapper.class);
-    job.setCombinerClass(AggregateEdgesReducer.class);
-    job.setReducerClass(AggregateEdgesReducer.class);
-    job.setOutputKeyClass(Text.class);
-    job.setOutputValueClass(Text.class);
-    for (int i = 0; i < otherArgs.length - 1; ++i) {
-      FileInputFormat.addInputPath(job, new Path(otherArgs[i]));
+
+    String edgeTypes[] = {
+        "comment_hasCreator_person",
+        "comment_hasTag_tag",
+        "comment_isLocatedIn_place",
+        "comment_replyOf_comment",
+        "comment_replyOf_post",
+        "forum_containerOf_post",
+        "forum_hasMember_person",
+        "forum_hasModerator_person",
+        "forum_hasTag_tag",
+        "organisation_isLocatedIn_place",
+        "person_hasInterest_tag",
+        "person_isLocatedIn_place",
+        "person_likes_comment",
+        "person_likes_post",
+        "person_studyAt_organisation",
+        "person_workAt_organisation",
+        "place_isPartOf_place",
+        "post_hasCreator_person",
+        "post_hasTag_tag",
+        "post_isLocatedIn_place",
+        "tagclass_isSubclassOf_tagclass",
+        "tag_hasType_tagclass"};
+
+    // Run a MapReduce job per edge type
+    for (String edgeType : edgeTypes) {
+      Job job = new Job(conf, "Generate " + edgeType + " Reverse Index");
+      job.setJarByClass(EdgeListReverseIndex.class);
+      job.setMapperClass(InVertexMapper.class);
+      job.setCombinerClass(AggregateEdgesReducer.class);
+      job.setReducerClass(AggregateEdgesReducer.class);
+      job.setOutputKeyClass(Text.class);
+      job.setOutputValueClass(Text.class);
+      String inputFileMatchPattern = otherArgs[0] + "/" + edgeType + "*.csv";
+      FileInputFormat.addInputPath(job, new Path(inputFileMatchPattern));
+      String outputDirectory = otherArgs[1] + "/" + edgeType;
+      FileOutputFormat.setOutputPath(job, new Path(outputDirectory));
+      job.getConfiguration().set("mapreduce.output.basename", 
+          edgeType + "_ridx");
+      job.setNumReduceTasks(9);
+      if (!job.waitForCompletion(true)) {
+        System.exit(1);
+      }
+      
     }
-    FileOutputFormat.setOutputPath(job,
-      new Path(otherArgs[otherArgs.length - 1]));
-    System.exit(job.waitForCompletion(true) ? 0 : 1);
+
+    System.exit(0);
   }
 }
