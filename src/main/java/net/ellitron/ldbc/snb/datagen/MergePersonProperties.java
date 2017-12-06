@@ -123,7 +123,6 @@ public class MergePersonProperties {
   private static String serializePropertyValueList(List<String> propList, 
       String fieldSeparator) {
     StringBuilder sb = new StringBuilder();
-    sb.append("\"");
     for (int i = 0; i < propList.size(); i++) {
       // If not first element, start with array separator
       if (i > 0) {
@@ -132,7 +131,6 @@ public class MergePersonProperties {
 
       sb.append(propList.get(i));
     }
-    sb.append("\"");
 
     return sb.toString();
   }
@@ -152,8 +150,14 @@ public class MergePersonProperties {
     File [] fileList = dir.listFiles(new FilenameFilter() {
           @Override
           public boolean accept(File dir, String name) {
-            return name.matches(
-                "^person_email_emailaddress_[0-9]+_[0-9]+\\.csv");
+            if (name.matches("^person_email_emailaddress_[0-9]+_[0-9]+\\.csv"))
+            {
+              System.out.println(String.format("Found email property file %s", 
+                  name));
+              return true; 
+            } else {
+              return false;
+            }
           }
         });
 
@@ -162,8 +166,13 @@ public class MergePersonProperties {
     fileList = dir.listFiles(new FilenameFilter() {
           @Override
           public boolean accept(File dir, String name) {
-            return name.matches(
-                "^person_speaks_language_[0-9]+_[0-9]+\\.csv");
+            if (name.matches("^person_speaks_language_[0-9]+_[0-9]+\\.csv")) {
+              System.out.println(
+                  String.format("Found language property file %s", name));
+              return true; 
+            } else {
+              return false;
+            }
           }
         });
 
@@ -214,6 +223,8 @@ public class MergePersonProperties {
         } else {
           outFile.append("|");
         }
+
+        outFile.append("\n");
       }
 
       inFile.close();
