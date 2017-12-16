@@ -123,7 +123,6 @@ public class EdgeListReverseIndex {
       Job job = new Job(conf, "Generate " + edgeType + " Reverse Index");
       job.setJarByClass(EdgeListReverseIndex.class);
       job.setMapperClass(InVertexMapper.class);
-      job.setCombinerClass(AggregateEdgesReducer.class);
       job.setReducerClass(AggregateEdgesReducer.class);
       job.setOutputKeyClass(Text.class);
       job.setOutputValueClass(Text.class);

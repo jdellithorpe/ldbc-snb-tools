@@ -49,12 +49,14 @@ public class KnowsRelationDualGenerator {
 
     public void setup(Context context) 
         throws IOException, InterruptedException {
+      System.out.println("header: " + context.getConfiguration().get("my.parameters.header"));
       String[] tokens = 
           context.getConfiguration().get("my.parameters.header").split("\\|");
       String newValue = tokens[0];
       for (int i = 2; i < tokens.length; i++) {
         newValue = newValue + "|" + tokens[i];
       }
+      System.out.println(String.format("Writing %s %s", new Text(tokens[1]), new Text(newValue)));
       context.write(new Text(tokens[1]), new Text(newValue));
     }
 
@@ -88,7 +90,6 @@ public class KnowsRelationDualGenerator {
       Job job = new Job(conf, "Generate " + edgeType + " Dual Edges");
       job.setJarByClass(KnowsRelationDualGenerator.class);
       job.setMapperClass(EdgeMapper.class);
-      job.setCombinerClass(EdgeReducer.class);
       job.setReducerClass(EdgeReducer.class);
       job.setOutputKeyClass(Text.class);
       job.setOutputValueClass(Text.class);
@@ -97,7 +98,7 @@ public class KnowsRelationDualGenerator {
       String outputDirectory = otherArgs[1] + "/" + edgeType;
       FileOutputFormat.setOutputPath(job, new Path(outputDirectory));
       job.getConfiguration().set("mapreduce.output.basename", edgeType);
-      job.setNumReduceTasks(4);
+      job.setNumReduceTasks(1);
       if (!job.waitForCompletion(true)) {
         System.exit(1);
       }
