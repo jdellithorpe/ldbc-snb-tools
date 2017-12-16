@@ -30,18 +30,33 @@ public class KnowsRelationDualGenerator {
       String[] tokens = value.toString().split("\\|");
       String oldValue = tokens[1];
       String newValue = tokens[0];
-      for (int i = 2; i < tokens.length; i++) {
-        oldValue = oldValue + "|" + tokens[i];
-        newValue = newValue + "|" + tokens[i];
+
+      // Only process edges (skip headers)
+      if (newValue.matches("^[0-9].*")) {
+        for (int i = 2; i < tokens.length; i++) {
+          oldValue = oldValue + "|" + tokens[i];
+          newValue = newValue + "|" + tokens[i];
+        }
+        context.write(new Text(tokens[0]), new Text(oldValue));
+        context.write(new Text(tokens[1]), new Text(newValue));
       }
-      context.write(new Text(tokens[0]), new Text(oldValue));
-      context.write(new Text(tokens[1]), new Text(newValue));
     }
   }
 
   public static class EdgeReducer
        extends Reducer<Text, Text, Text, Text> {
     private IntWritable result = new IntWritable();
+
+    public void setup(Context context) 
+        throws IOException, InterruptedException {
+      String[] tokens = 
+          context.getConfiguration().get("my.parameters.header").split("\\|");
+      String newValue = tokens[0];
+      for (int i = 2; i < tokens.length; i++) {
+        newValue = newValue + "|" + tokens[i];
+      }
+      context.write(new Text(tokens[1]), new Text(newValue));
+    }
 
     public void reduce(Text key, Iterable<Text> values,
                        Context context
@@ -62,9 +77,14 @@ public class KnowsRelationDualGenerator {
     conf.set("mapreduce.output.textoutputformat.separator", "|");
 
     String edgeTypes[] = {"person_knows_person"};
+    
+    String edgeTypeHeaders[] = {"Person.id|Person.id|creationDate"};
 
     // Run a MapReduce job per edge type
-    for (String edgeType : edgeTypes) {
+    for (int i = 0; i < edgeTypes.length; i++) {
+      String edgeType = edgeTypes[i];
+      String header = edgeTypeHeaders[i];
+      conf.set("my.parameters.header", header);
       Job job = new Job(conf, "Generate " + edgeType + " Dual Edges");
       job.setJarByClass(KnowsRelationDualGenerator.class);
       job.setMapperClass(EdgeMapper.class);
@@ -81,7 +101,6 @@ public class KnowsRelationDualGenerator {
       if (!job.waitForCompletion(true)) {
         System.exit(1);
       }
-      
     }
 
     System.exit(0);

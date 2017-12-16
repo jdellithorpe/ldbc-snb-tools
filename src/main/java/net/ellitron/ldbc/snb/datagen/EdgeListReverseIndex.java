@@ -23,16 +23,31 @@ public class EdgeListReverseIndex {
                     ) throws IOException, InterruptedException {
       String[] tokens = value.toString().split("\\|");
       String newValue = tokens[0];
-      for (int i = 2; i < tokens.length; i++) {
-        newValue = newValue + "|" + tokens[i];
+
+      // Only process edges (skip headers)
+      if (newValue.matches("^[0-9].*")) {
+        for (int i = 2; i < tokens.length; i++) {
+          newValue = newValue + "|" + tokens[i];
+        }
+        context.write(new Text(tokens[1]), new Text(newValue));
       }
-      context.write(new Text(tokens[1]), new Text(newValue));
     }
   }
 
   public static class AggregateEdgesReducer
        extends Reducer<Text, Text, Text, Text> {
     private IntWritable result = new IntWritable();
+
+    public void setup(Context context) 
+        throws IOException, InterruptedException {
+      String[] tokens = 
+          context.getConfiguration().get("my.parameters.header").split("\\|");
+      String newValue = tokens[0];
+      for (int i = 2; i < tokens.length; i++) {
+        newValue = newValue + "|" + tokens[i];
+      }
+      context.write(new Text(tokens[1]), new Text(newValue));
+    }
 
     public void reduce(Text key, Iterable<Text> values,
                        Context context
@@ -76,8 +91,35 @@ public class EdgeListReverseIndex {
         "tagclass_isSubclassOf_tagclass",
         "tag_hasType_tagclass"};
 
+    String edgeTypeHeaders[] = {
+        "Comment.id|Person.id",
+        "Comment.id|Tag.id",
+        "Comment.id|Place.id",
+        "Comment.id|Comment.id",
+        "Comment.id|Post.id",
+        "Forum.id|Post.id",
+        "Forum.id|Person.id|joinDate",
+        "Forum.id|Person.id",
+        "Forum.id|Tag.id",
+        "Organisation.id|Place.id",
+        "Person.id|Tag.id",
+        "Person.id|Place.id",
+        "Person.id|Comment.id|creationDate",
+        "Person.id|Post.id|creationDate",
+        "Person.id|Organisation.id|classYear",
+        "Person.id|Organisation.id|workFrom",
+        "Place.id|Place.id",
+        "Post.id|Person.id",
+        "Post.id|Tag.id",
+        "Post.id|Place.id",
+        "TagClass.id|TagClass.id",
+        "Tag.id|TagClass.id"};
+
     // Run a MapReduce job per edge type
-    for (String edgeType : edgeTypes) {
+    for (int i = 0; i < edgeTypes.length; i++) {
+      String edgeType = edgeTypes[i];
+      String header = edgeTypeHeaders[i];
+      conf.set("my.parameters.header", header);
       Job job = new Job(conf, "Generate " + edgeType + " Reverse Index");
       job.setJarByClass(EdgeListReverseIndex.class);
       job.setMapperClass(InVertexMapper.class);
@@ -91,11 +133,10 @@ public class EdgeListReverseIndex {
       FileOutputFormat.setOutputPath(job, new Path(outputDirectory));
       job.getConfiguration().set("mapreduce.output.basename", 
           edgeType + "_ridx");
-      job.setNumReduceTasks(9);
+      job.setNumReduceTasks(1);
       if (!job.waitForCompletion(true)) {
         System.exit(1);
       }
-      
     }
 
     System.exit(0);
