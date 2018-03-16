@@ -161,6 +161,11 @@ public class MergePersonProperties {
           }
         });
 
+    if (fileList == null || fileList.length == 0) {
+      System.out.println("Error: No email address property files found.");
+      return;
+    }
+
     Map<String, List<String>> personEmail = parsePropFiles(fileList);
 
     fileList = dir.listFiles(new FilenameFilter() {
@@ -176,6 +181,11 @@ public class MergePersonProperties {
           }
         });
 
+    if (fileList == null || fileList.length == 0) {
+      System.out.println("Error: No language property files found.");
+      return;
+    }
+
     Map<String, List<String>> personSpeaks = parsePropFiles(fileList);
 
     fileList = dir.listFiles(new FilenameFilter() {
@@ -185,6 +195,11 @@ public class MergePersonProperties {
                 "^person_[0-9]+_[0-9]+\\.csv");
           }
         });
+
+    if (fileList == null || fileList.length == 0) {
+      System.out.println("Error: No person files found.");
+      return;
+    } 
 
     for (File f : fileList) {
       BufferedReader inFile =
